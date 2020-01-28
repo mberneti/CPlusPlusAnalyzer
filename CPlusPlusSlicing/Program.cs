@@ -26,8 +26,13 @@ namespace AntlerCPlusPlus
 
                                 int x = 2;
 
-                                if(x<4)
+                                if(x<3)
                                     cout <<""good"";
+
+                                if(x<1)
+                                {
+                                    cout <<""bad"";
+                                }
 
                                 for (int i = 0; i < 10; i++)
                                 {
@@ -36,6 +41,9 @@ namespace AntlerCPlusPlus
                                 }
                             }
                             ";
+
+            Console.WriteLine("Input:");
+            Console.WriteLine(input);
 
             AntlrInputStream inputStream = new AntlrInputStream(input);
 
@@ -50,9 +58,10 @@ namespace AntlerCPlusPlus
 
             // BVisitor visitor = new BVisitor();
             // Console.WriteLine(visitor.Visit(tree));
-            Console.WriteLine(replaceExpression);
 
-            Console.WriteLine("done");
+            Console.WriteLine("////////////////////////////////////////////////////////////////////////");
+            Console.WriteLine("Output:");
+            Console.WriteLine(replaceExpression);
 
         }
     }

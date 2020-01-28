@@ -12,36 +12,57 @@ namespace AntlerCPlusPlus
 {
     public class ReplaceExpression : CPP14BaseListener
     {
+        int labelCounter=1;
+        private CommonTokenStream commonTokenStream;
         private TokenStreamRewriter rewriter;
         public ReplaceExpression(CommonTokenStream tokens)
         {
+            commonTokenStream = tokens;
             rewriter = new TokenStreamRewriter(tokens);
+        }
+        public override void EnterSelectionstatement([NotNull] CPP14Parser.SelectionstatementContext context) {
+
+            var isAnIfCondition = context.GetChild(0).GetText().Contains("if");
+
+            if (isAnIfCondition)
+            {
+                // add a not operator to the condition ---------------------------------------
+                var condition = context.GetChild(2);
+                var conditionStartToken = commonTokenStream.Get(condition.SourceInterval.a);
+                var conditionEndToken = commonTokenStream.Get(condition.SourceInterval.b);
+
+                rewriter.Replace(conditionStartToken, conditionEndToken, $"!({condition.GetText()})");
+                // ---------------------------------------------------------------------------
+
+                var conditionLabel = GetNewLabel();
+
+                // add goto statement to the if condition ------------------------------------
+                var rightParen = context.GetChild(3);
+                var rightParenToken = commonTokenStream.Get(rightParen.SourceInterval.a);
+                rewriter.InsertAfter(rightParenToken, $" goto {conditionLabel}");
+                // ---------------------------------------------------------------------------
+
+                // add label to the end of condition -----------------------------------------
+                var stopSpaces = GetTokenSpaces(context.Start.Column);
+                rewriter.InsertAfter(context.Stop, $"\r\n{stopSpaces + conditionLabel}:\r\n");
+                // ---------------------------------------------------------------------------
+
+                var childrenCount = context.children.Count;
+                var statement = context.children[childrenCount - 1];
+                if (statement.GetText().EndsWith("}"))
+                {
+                    var leftBraceToken = commonTokenStream.Get(statement.SourceInterval.a);
+                    var rightBraceToken = commonTokenStream.Get(statement.SourceInterval.b);
+                    rewriter.Delete(leftBraceToken);
+                    rewriter.Delete(rightBraceToken);
+                }
+
+            }
+
+            //Console.WriteLine(context.GetText());
         }
         public override void ExitStatement([NotNull]CPP14Parser.StatementContext context)
         {
-            LogDetails(context);
-
-            var parentType = context.Parent.GetType();
-
-            var types = new List<Type> {
-                typeof(SelectionstatementContext),
-                typeof(IterationstatementContext)
-             };
-
-            if (types.Contains(parentType))
-            {
-                AddLogToStatement(context);
-            }
-        }
-
-        int functionStatementCounter = 1;
-        int functionCounter = 1;
-        public override void EnterFunctionbody([NotNull]CPP14Parser.FunctionbodyContext context)
-        {
-            var logText = context.Parent.GetText();
-            functionStatementCounter = 1;
-            AddLogAfter(context.Start, "MethodEntryLog");
-            functionCounter++;
         }
 
         public override string ToString()
@@ -50,41 +71,10 @@ namespace AntlerCPlusPlus
         }
 
         #region Helpers
-        void LogDetails(StatementContext context)
-        {
-            var child = context.children[0];
-            Console.WriteLine(context.Depth() + $"{child.GetType() } " + context.GetText() + child.GetType());
 
-        }
-        void AddLogToStatement(StatementContext context)
+        string GetNewLabel()
         {
-            var child = context.children[0];
-
-            if (child.GetType() == typeof(CompoundstatementContext))
-            {
-                AddLogBefore(context.Stop);
-            }
-            else
-            {
-                AddBracesAndLog(context);
-            }
-        }
-        void AddBracesAndLog(StatementContext context)
-        {
-            var column = context.Start.Column;
-            var columnSpaces = GetTokenSpaces(column);
-
-            rewriter.Replace(context.Start, context.Stop, $"{{\r\n{columnSpaces}\t" + context.GetText() + GetLog(column) + "}");
-
-
-        }
-        void AddLogAfter(IToken start, string text = null)
-        {
-            rewriter.InsertAfter(start, GetLog(start.Column, text));
-        }
-        void AddLogBefore(IToken stop, string text = null)
-        {
-            rewriter.InsertBefore(stop, GetLog(stop.Column));
+            return $"L{labelCounter++}";
         }
 
         string GetTokenSpaces(int size)
@@ -94,31 +84,6 @@ namespace AntlerCPlusPlus
             for (int i = 0; i < size; i++) totalSpaces += " ";
 
             return totalSpaces;
-        }
-
-
-
-        string GetLog(int column = 0, string text = null)
-        {
-            var columnSpaces = GetTokenSpaces(column);
-
-            var logCode = $"\r\n{columnSpaces}\tcout << \"{functionCounter}.{functionStatementCounter}.{text}\" << endl;";
-
-            if (string.IsNullOrWhiteSpace(text))
-                logCode = $"\r\n{columnSpaces}\tcout << \"{functionCounter}.{functionStatementCounter}.log\" << endl;";
-
-            ++functionStatementCounter;
-
-            return GetCommentTemplate(columnSpaces, logCode);
-        }
-
-        string GetCommentTemplate(string columnSpaces, string logCode)
-        {
-            var emptyComment = $"\r\n{columnSpaces}\t// ---------------------";
-            var header = $"\r\n{columnSpaces}\t// --- Documantation ---";
-
-            var template = header + logCode + emptyComment + $"\r\n{columnSpaces}";
-            return template;
         }
         #endregion
     }
