@@ -24,17 +24,6 @@ namespace AntlerCPlusPlus
             BVisitor visitor = new BVisitor();
 
             Console.WriteLine(visitor.Visit(expressionContext));
-
-            // StreamReader inputStream2 = new StreamReader(Console.OpenStandardInput());
-            // AntlrInputStream input2 = new AntlrInputStream(inputStream2.ReadToEnd());
-            // BGrammerLexer lexer = new BGrammerLexer(input2);
-            // CommonTokenStream tokens = new CommonTokenStream(lexer);
-            // BGrammerParser parser = new BGrammerParser(tokens);
-            // IParseTree tree = parser.prog();
-            // Console.WriteLine(tree.ToStringTree(parser));
-            // BVisitor visitor2 = new BVisitor();
-            // Console.WriteLine(visitor2.Visit(tree));
-
         }
     }
 }
