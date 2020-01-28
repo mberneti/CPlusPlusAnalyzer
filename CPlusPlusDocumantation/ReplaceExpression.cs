@@ -36,11 +36,11 @@ namespace AntlerCPlusPlus
 
         int functionStatementCounter = 1;
         int functionCounter = 1;
-        public override void EnterFunctionbody([NotNull]CPP14Parser.FunctionbodyContext context)
+        public override void EnterFunctionbody([NotNull]FunctionbodyContext context)
         {
             var logText = context.Parent.GetText();
             functionStatementCounter = 1;
-            AddLogAfter(context.Start, "MethodEntryLog");
+            AddLogAfter(context.Start, context.Parent.GetType().Name);
             functionCounter++;
         }
 
@@ -52,9 +52,8 @@ namespace AntlerCPlusPlus
         #region Helpers
         void LogDetails(StatementContext context)
         {
-            var child = context.children[0];
-            Console.WriteLine(context.Depth() + $"{child.GetType() } " + context.GetText() + child.GetType());
-
+            //var child = context.children[0];
+            //Console.WriteLine(context.Depth() + $"{child.GetType() } " + context.GetText() + child.GetType());
         }
         void AddLogToStatement(StatementContext context)
         {
@@ -62,29 +61,28 @@ namespace AntlerCPlusPlus
 
             if (child.GetType() == typeof(CompoundstatementContext))
             {
-                AddLogBefore(context.Stop);
+                AddLogBefore(context.Stop, context.Parent.GetType().Name);
             }
             else
             {
-                AddBracesAndLog(context);
+                //add braces to if statement
+                AddBracesAndLog(context, context.Parent.GetType().Name);
             }
         }
-        void AddBracesAndLog(StatementContext context)
+        void AddBracesAndLog(StatementContext context, string text)
         {
             var column = context.Start.Column;
             var columnSpaces = GetTokenSpaces(column);
 
-            rewriter.Replace(context.Start, context.Stop, $"{{\r\n{columnSpaces}\t" + context.GetText() + GetLog(column) + "}");
-
-
+            rewriter.Replace(context.Start, context.Stop, $"{{\r\n{columnSpaces}\t" + context.GetText() + GetLog(column, text) + "}");
         }
-        void AddLogAfter(IToken start, string text = null)
+        void AddLogAfter(IToken start, string title)
         {
-            rewriter.InsertAfter(start, GetLog(start.Column, text));
+            rewriter.InsertAfter(start, GetLog(start.Column, title));
         }
-        void AddLogBefore(IToken stop, string text = null)
+        void AddLogBefore(IToken stop, string title)
         {
-            rewriter.InsertBefore(stop, GetLog(stop.Column));
+            rewriter.InsertBefore(stop, GetLog(stop.Column,title));
         }
 
         string GetTokenSpaces(int size)
@@ -98,14 +96,11 @@ namespace AntlerCPlusPlus
 
 
 
-        string GetLog(int column = 0, string text = null)
+        string GetLog(int column, string title)
         {
             var columnSpaces = GetTokenSpaces(column);
 
-            var logCode = $"\r\n{columnSpaces}\tcout << \"{functionCounter}.{functionStatementCounter}.{text}\" << endl;";
-
-            if (string.IsNullOrWhiteSpace(text))
-                logCode = $"\r\n{columnSpaces}\tcout << \"{functionCounter}.{functionStatementCounter}.log\" << endl;";
+            var logCode = $"\r\n{columnSpaces}\tcout << \"{functionCounter}.{functionStatementCounter}.{title}\" << endl;";
 
             ++functionStatementCounter;
 

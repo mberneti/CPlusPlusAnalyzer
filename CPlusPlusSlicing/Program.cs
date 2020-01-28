@@ -24,7 +24,9 @@ namespace AntlerCPlusPlus
                             {
                                 cout << ""Hello World!"";
 
-                                if(true)
+                                int x = 2;
+
+                                if(x<4)
                                     cout <<""good"";
 
                                 for (int i = 0; i < 10; i++)

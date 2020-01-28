@@ -35,6 +35,9 @@ namespace AntlerCPlusPlus
                             }
                             ";
 
+            Console.WriteLine("Input:");
+            Console.WriteLine(input);
+
             AntlrInputStream inputStream = new AntlrInputStream(input);
 
             CPP14Lexer lexer = new CPP14Lexer(inputStream);
@@ -48,9 +51,10 @@ namespace AntlerCPlusPlus
 
             // BVisitor visitor = new BVisitor();
             // Console.WriteLine(visitor.Visit(tree));
-            Console.WriteLine(replaceExpression);
 
-            Console.WriteLine("done");
+            Console.WriteLine("////////////////////////////////////////////////////////////////////////");
+            Console.WriteLine("Output:");
+            Console.WriteLine(replaceExpression);
 
         }
     }
