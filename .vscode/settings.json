@@ -1,0 +1,13 @@
+{
+  "antlr4.generation": {
+    "mode": "external",
+    "outputDir": "antlr4-runtime",
+    "language": "CSharp",
+    "listeners": true,
+    "visitors": true
+  },
+  "files.associations": {
+    "ostream": "cpp",
+    "xstring": "cpp"
+  }
+}
