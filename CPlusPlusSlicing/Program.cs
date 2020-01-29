@@ -8,6 +8,7 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using static CPP14Parser;
+using System.Text.RegularExpressions;
 
 namespace AntlerCPlusPlus
 {
@@ -26,12 +27,17 @@ namespace AntlerCPlusPlus
 
                                 int x = 2;
 
-                                if(x<3)
-                                    cout <<""good"";
+                                if(x == 2)
+                                {
+                                    int y = 2;
+                                    x = 20 * y;
+                                }
 
                                 if(x<1)
                                 {
                                     cout <<""bad"";
+                                }else {
+                                    cout <<""good"";
                                 }
 
                                 for (int i = 0; i < 10; i++)
@@ -61,7 +67,13 @@ namespace AntlerCPlusPlus
 
             Console.WriteLine("////////////////////////////////////////////////////////////////////////");
             Console.WriteLine("Output:");
-            Console.WriteLine(replaceExpression);
+
+            var resultString = Regex.Replace(replaceExpression.ToString(), @"^\s+$[\r\n]*", string.Empty,
+                RegexOptions.Multiline);
+
+            resultString = Regex.Replace(resultString, @"^\s+", string.Empty,RegexOptions.Multiline);
+
+            Console.WriteLine(resultString);
 
         }
     }

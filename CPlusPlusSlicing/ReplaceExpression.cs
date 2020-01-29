@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using static CPP14Parser;
@@ -21,6 +22,7 @@ namespace AntlerCPlusPlus
             rewriter = new TokenStreamRewriter(tokens);
         }
         public override void EnterSelectionstatement([NotNull] CPP14Parser.SelectionstatementContext context) {
+            var lineSpaces = GetTokenSpaces(context.Start.Column);// for better code formatting
 
             var isAnIfCondition = context.GetChild(0).GetText().Contains("if");
 
@@ -42,26 +44,62 @@ namespace AntlerCPlusPlus
                 rewriter.InsertAfter(rightParenToken, $" goto {conditionLabel}");
                 // ---------------------------------------------------------------------------
 
-                // add label to the end of condition -----------------------------------------
-                var stopSpaces = GetTokenSpaces(context.Start.Column);
-                rewriter.InsertAfter(context.Stop, $"\r\n{stopSpaces + conditionLabel}:\r\n");
+                // check else statement ------------------------------------------------------
+                var elseLabelText = "";
+                var elseStatementText = "";
+                var elseContext = context.children.FirstOrDefault(x => x.GetText() == "else");
+
+                if (elseContext !=null)
+                {
+                    var elseToken = commonTokenStream.Get(elseContext.SourceInterval.a);
+
+                    var elseLabel = GetNewLabel();
+
+                    // replace else with goto keyword -------------------------------
+                    var elseGotoText = $"goto {elseLabel}";
+                    rewriter.Replace(elseToken, elseGotoText);
+                    // --------------------------------------------------------------
+
+                    // get else statement -------------------------------------------
+                    var elseIndex = context.children.IndexOf(elseContext);
+                    var elseStatementContext = context.children[elseIndex + 1];
+
+                    // removing braces from statement ----------------------------------------------------------
+                    elseStatementText = Regex.Replace(elseStatementContext.GetText(), @"^{+|}+$", string.Empty);
+                    // -----------------------------------------------------------------------------------------
+
+                    elseStatementText = $"\r\n{lineSpaces + elseStatementText}\r\n";
+                    // --------------------------------------------------------------
+
+                    elseLabelText = $"\r\n{lineSpaces+elseLabel}:\r\n";
+                }
                 // ---------------------------------------------------------------------------
 
-                var childrenCount = context.children.Count;
-                var statement = context.children[childrenCount - 1];
-                if (statement.GetText().EndsWith("}"))
+                // add label to the end of condition -----------------------------------------
+                var conditionLabelText = $"\r\n{lineSpaces + conditionLabel}:\r\n";
+                rewriter.InsertAfter(context.Stop, conditionLabelText + elseStatementText + elseLabelText);
+                // ---------------------------------------------------------------------------
+
+                foreach (var statement in context.children)
                 {
-                    var leftBraceToken = commonTokenStream.Get(statement.SourceInterval.a);
-                    var rightBraceToken = commonTokenStream.Get(statement.SourceInterval.b);
-                    rewriter.Delete(leftBraceToken);
-                    rewriter.Delete(rightBraceToken);
+                    var sText = statement.GetText();
+                    if (sText.EndsWith("}"))
+                    {
+                        var leftBraceToken = commonTokenStream.Get(statement.SourceInterval.a);
+                        var rightBraceToken = commonTokenStream.Get(statement.SourceInterval.b);
+                        rewriter.Delete(leftBraceToken);
+                        rewriter.Delete(rightBraceToken);
+                        //rewriter.Replace(leftBraceToken, $"\r\n");
+                        //rewriter.Replace(rightBraceToken, $"\r\n");
+                    }
+
                 }
 
             }
 
             //Console.WriteLine(context.GetText());
         }
-        public override void ExitStatement([NotNull]CPP14Parser.StatementContext context)
+        public override void ExitStatement([NotNull]StatementContext context)
         {
         }
 
